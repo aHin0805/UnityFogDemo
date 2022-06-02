@@ -8,7 +8,6 @@ Shader "Custom/SimpleDepthFog"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _FogColor("Fog Color", Color) = (1, 0, 0, 0)        // 雾色
-        _FogDensity("Fog Density", Range(0, 1)) = 0.1       // 雾浓度
         _FogStart("Fog Start", float) = 0                   // 雾的开始距离
         _FogEnd("Fog End", float) = 300                     // 雾的结束距离
     }
@@ -36,7 +35,7 @@ Shader "Custom/SimpleDepthFog"
                 float3 ray : TEXCOORD1;         // 摄像机朝向顶点的射线
             };
             
-            float4x4 _Ray;      // 摄像机射线
+            float4x4 _Ray;      // 摄像机射线，通过C#传入
 
             v2f vert(appdata v, uint vid : SV_VertexID)
             {
@@ -60,8 +59,8 @@ Shader "Custom/SimpleDepthFog"
                 // 获取一个[0,1]范围的线性深度值
                 float linear01Depth = Linear01Depth(depth);
                 // 获取当前顶点在裁剪空间中与摄像机的距离
-                dist = length(_WorldSpaceCameraPos.xyz + ray * linear01Depth);
-                //dist = length(ray * linear01Depth);
+                //dist = length(_WorldSpaceCameraPos.xyz + ray.xyz * linear01Depth);
+                dist = length(ray * linear01Depth);
                 return dist;
             }
 
@@ -71,12 +70,8 @@ Shader "Custom/SimpleDepthFog"
             /// 获取线性雾的雾效因子
             float4 GetLinearFogFactor(float dist)
             {
-                _FogStart = max(0, _FogStart);
-                if (_FogEnd <= _FogStart)
-                {
-                    _FogEnd = _FogStart + 0.01;
-                }
                 float factor = (_FogEnd - dist) / (_FogEnd - _FogStart);
+                factor = saturate(factor);
                 return factor;
             }
 

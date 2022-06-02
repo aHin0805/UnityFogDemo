@@ -19,6 +19,10 @@ public class PostRenderFog : MonoBehaviour
 	void Awake()
 	{
 		_camera = Camera.main;
+		if (_camera)
+		{
+			_camera.depthTextureMode = DepthTextureMode.Depth;
+		}
 		if (m_depthFogMat)
 		{
 			MatHash_Ray = Shader.PropertyToID("_Ray");
@@ -55,7 +59,7 @@ public class PostRenderFog : MonoBehaviour
 			Graphics.Blit(m_cameraRenderTex, null as RenderTexture);
 		}
 
-		RenderTexture.ReleaseTemporary(m_cameraRenderTex); 
+		RenderTexture.ReleaseTemporary(m_cameraRenderTex);
 		_camera.targetTexture = null;
 	}
 
@@ -73,14 +77,16 @@ public class PostRenderFog : MonoBehaviour
 			var forwardDir = trans.forward;
 			var rightDir = trans.right;
 
-			var upVec = upDir * far;
+			var halfOfHeight = Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * far;
+			var halfOfWidth = halfOfHeight * aspect;
+			var upVec = upDir * halfOfHeight;
 			var forwardVec = forwardDir * far;
-			var rightVec = rightDir * far;
+			var rightVec = rightDir * halfOfWidth;
 
-			var bl = forwardVec - upVec - rightDir;     // 裁剪空间远端左下角顶点
-			var tl = forwardVec + upVec - rightDir;     // 裁剪空间远端左上角顶点
-			var tr = forwardVec + upVec + rightDir;     // 裁剪空间远端右上角顶点
-			var br = forwardVec - upVec - rightDir;     // 裁剪空间远端右下角顶点
+			var bl = forwardVec - upVec - rightVec;     // 裁剪空间远端左下角顶点
+			var tl = forwardVec + upVec - rightVec;     // 裁剪空间远端左上角顶点
+			var tr = forwardVec + upVec + rightVec;     // 裁剪空间远端右上角顶点
+			var br = forwardVec - upVec - rightVec;     // 裁剪空间远端右下角顶点
 
 			var ray = Matrix4x4.identity;
 			ray.SetRow(0, bl);
